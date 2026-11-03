@@ -136,6 +136,21 @@ def build_and_render(spec, outdir, fps_render, samples, scale):
             bsdf.inputs["Emission Strength"].default_value = m["emission_strength"]
         ob.data.materials.append(mat)
 
+        # eased location/rotation keyframes per object: "keys":[{t,location?,rotation_deg?}]
+        for k in o.get("keys", []):
+            frame = 1 + k["t"] * fps_render
+            if "location" in k:
+                ob.location = k["location"]
+                ob.keyframe_insert("location", frame=frame)
+            if "rotation_deg" in k:
+                ob.rotation_euler = rad(k["rotation_deg"])
+                ob.keyframe_insert("rotation_euler", frame=frame)
+        if o.get("keys") and ob.animation_data and ob.animation_data.action:
+            for fc in action_fcurves(ob.animation_data.action):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "EASE_IN_OUT"
+
         spin = o.get("spin_z_deg_per_s")
         if spin:
             ob.rotation_euler = rad(o.get("rotation_deg", (0, 0, 0)))
