@@ -1,0 +1,136 @@
+{
+  "spec_version": 1,
+  "name": "photoreal-tech-explainer",
+  "summary": "Cinematic dark photoreal 3D explainer: ray-traced macro hero shots of everyday objects under a soft key + warm amber rim, karaoke top captions with an iOS selection-box key word, reacting cartoon mascot, dense tactile sound design.",
+  "source": {
+    "duration_s": 55.6,
+    "analyzed_at": "2026-11-03",
+    "notes": "55s vertical reel about tire manufacturing. Style only; no watermark, mascot likeness, or transcript cloned. Extends the sibling 'mascot-tech-explainer' caption/mascot system with a photoreal 3D stage."
+  },
+
+  "format": {
+    "width": 1080, "height": 1920, "fps": 30,
+    "orientation": "vertical",
+    "safe_margins_pct": { "top": 5, "bottom": 4, "sides": 6 }
+  },
+
+  "pacing": {
+    "median_shot_s": null,
+    "shot_s_range": [3, 12],
+    "cuts_per_minute": 4,
+    "curve": "continuous-morph between 3D scenes; camera never static; caption beat every 1.5-2.5s carries rhythm",
+    "beat_synced": false,
+    "hook_max_s": 3.0
+  },
+
+  "palette": {
+    "background": "#050507",
+    "text_primary": "#FFFFFF",
+    "text_dimmed": "#9A9AA0",
+    "accent": "#E0A33E",
+    "extra": ["#3478F6", "#6FA8FF", "#1C1C1E"],
+    "mood": "near-black studio; subjects drawn by light; amber = heat/highlight, blue reserved for caption selection boxes"
+  },
+
+  "typography": {
+    "family_vibe": "iOS system sans (SF Pro-like)",
+    "fallback_stack": "-apple-system, SF Pro Display, Inter, Helvetica Neue, sans-serif",
+    "case": "Sentence", "weight": 400, "emphasis_weight": 700,
+    "headline_size_pct_h": 3.2,
+    "effects": ["dimmed gray body words", "bold white emphasis", "no shadows/strokes"]
+  },
+
+  "captions": {
+    "present": true, "style": "karaoke-phrase",
+    "max_words_per_screen": 5, "position": "top", "top_offset_pct_h": 7,
+    "highlight": {
+      "mode": "selection-box", "value": "#3478F6",
+      "description": "Key word in an iOS text-selection box (rounded blue outline, two circular handles); occasionally an inline emoji before the boxed word (🔥 170°C)."
+    },
+    "container": "none",
+    "word_reveal": "words of the phrase fade in one-by-one with the VO (karaoke), ~120ms crossfade each"
+  },
+
+  "layout": {
+    "system": "stage-and-mascot",
+    "description": "Caption band top 7-14%; photoreal 3D stage 15-80% (full-bleed render); mascot ~18% height bottom-center, pose crossfades ~150ms on beats.",
+    "recurring_devices": [
+      "thin white annotation lines with dot endpoints labeling 3D parts (AIR, DENT, 170°C, BLADDER 350 PSI)",
+      "tiny gray corner footnotes ('Magnified illustration', 'Heat shown in colour')",
+      "measurement labels in small caps tracking wide",
+      "physical gauges/dials with animating needles as evidence devices"
+    ]
+  },
+
+  "shots": {
+    "types_ratio": { "photoreal_3d": 0.8, "ui_mockup_flat": 0.1, "cutaway_diagram": 0.1 },
+    "camera": "low-angle macro pushes; slow orbits on hero objects; rack focus; always drifting",
+    "transitions": ["morph/camera-push between scenes", "rare hard cut at chapter changes"]
+  },
+
+  "scene_3d": {
+    "present": true,
+    "realism": "photoreal",
+    "lighting": {
+      "rig": "large soft area key high-left ~35° down; strong warm amber rim/spot behind-left grazing silhouette and pooling on floor; faint cool blue fill behind-right; near-black world",
+      "key_softness": "large-area",
+      "rim_color": "#E0A33E",
+      "fill_color": "#6FA8FF",
+      "pools_on_floor": true,
+      "tone_mapping": "AgX filmic"
+    },
+    "materials": [
+      { "object": "rubber/plastic subjects", "class": "dielectric", "color": "very dark or saturated product color", "roughness": 0.3, "metallic": 0 },
+      { "object": "machinery/molds", "class": "machined-steel", "roughness": 0.25, "metallic": 0.9 },
+      { "object": "heat/energy", "class": "emission", "color": "#E0A33E" }
+    ],
+    "camera": {
+      "moves": ["slow push-in 2-4%/s on every shot", "low-angle macro for hero objects", "partial orbit 10-20° on reveals"],
+      "easing": "ease-in-out full shot; element entrances ease-out ~300ms",
+      "dof": { "fstop": 1.8, "focus": "subject; background melts" },
+      "motion_blur": true,
+      "micro_drift": true
+    },
+    "particles": ["scatter/instanced micro-detail on hero objects (hairs, debris, sparks)", "dust in light beams"],
+    "renderer_tier": "blender-photoreal"
+  },
+
+  "audio": {
+    "voiceover": true,
+    "music": "minimal; VO dominant; room tone under everything",
+    "words_per_second": 2.5,
+    "sfx": ["whoosh on morphs", "mechanical taps/clanks on machine actions", "impact on object lands", "riser pre-reveal"]
+  },
+
+  "sfx": {
+    "events_per_minute": 78,
+    "grammar": [
+      { "on": "scene morph / camera move start", "sound": "whoosh", "dur_s": 0.4 },
+      { "on": "object lands / parts meet", "sound": "impact", "dur_s": 0.5 },
+      { "on": "annotation line draws / label appears", "sound": "tick/click" },
+      { "on": "gauge needle moves / counter", "sound": "tap series" },
+      { "on": "pre-reveal last 2s", "sound": "riser, cut at reveal" }
+    ],
+    "bed": "low room tone -26dB; never dead air except a deliberate 0.3s beat before the payoff"
+  },
+
+  "script_formula": {
+    "hook": "Surprising measurable claim about an everyday object in <3s ('Every X ... is/does Y').",
+    "structure": ["hook", "process/mechanism shown step by step on the 3D stage",
+                   "evidence receipt (patent/spec/number)", "history beat",
+                   "payoff reframe", "share-CTA acted out in UI"],
+    "sentence_style": "short, 2nd person, present tense; one idea per caption beat",
+    "cta": "share sheet scene as the final shot"
+  },
+
+  "confidence": {
+    "pacing": "high", "palette": "high", "typography": "high", "captions": "high",
+    "layout": "high", "shots": "high", "scene_3d": "high", "audio": "medium",
+    "sfx": "high", "script_formula": "high"
+  },
+
+  "renderer_hints": {
+    "preferred": "blender+remotion",
+    "notes": "Hero shots via blender_shot.py (studio rig per scene_3d.lighting, fps-render 10-12, samples 24-32, scale 0.45-0.5, motion-interpolated). Composite in Remotion as OffthreadVideo under the caption band + mascot. Captions/mascot identical system to mascot-tech-explainer. SFX via synth_sfx.py placed by sfx.grammar."
+  }
+}
