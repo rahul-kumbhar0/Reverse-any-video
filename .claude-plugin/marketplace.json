@@ -1,0 +1,14 @@
+{
+  "name": "reverse-any-video-marketplace",
+  "owner": {
+    "name": "Reverse Any Video contributors",
+    "url": "https://github.com/rahul-kumbhar0/Reverse-any-video"
+  },
+  "plugins": [
+    {
+      "name": "reverse-any-video",
+      "source": ".",
+      "description": "Reverse-engineer any video into a reusable Claude style skill, then generate unlimited new videos in that style."
+    }
+  ]
+}
