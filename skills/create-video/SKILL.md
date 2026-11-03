@@ -61,6 +61,17 @@ Every timeline must pass the style's **fidelity checklist** on paper before rend
 
 ### 4. Render — tiered, mix tiers per shot
 
+**Before any 3D work read `references/blender-craft.md` and `references/threejs-craft.md`**
+and follow their workflow: study reference motion strips → model → verify with 2 stills →
+(optional) Three.js motion preview → full render → frame-verify. **New styles/topics are
+tested as a 3-second clip first**; only scale to full length once the 3s test passes.
+
+For Blender, write a scene script against `scripts/blender_kit.py` (bevelled
+`rounded_slab`, material presets, `studio_rig`, eased `key_loc`, emission ramps,
+`dust_field`, `anchor` + `export_anchors` for 3D-tracked labels, `render`). Worked example:
+`examples/touchpad-exploded/scene_touchpad.py`. `blender_shot.py` (JSON specs) remains for
+simple primitive shots.
+
 Read `../reverse-video/references/3d-motion-playbook.md` §7 first. The pro pipeline is
 "Blender renders + After Effects compositing"; ours is Blender/gen-video shots composited
 inside Remotion. Pick per shot, by the spec's `scene_3d.renderer_tier`:
