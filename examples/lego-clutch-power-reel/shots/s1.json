@@ -1,0 +1,272 @@
+{
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "background": "#050507",
+ "lights": [
+  {
+   "type": "area",
+   "location": [
+    3.5,
+    -2.5,
+    5.5
+   ],
+   "rotation_deg": [
+    30,
+    25,
+    0
+   ],
+   "energy": 230,
+   "size": 7
+  },
+  {
+   "type": "spot",
+   "location": [
+    -3.2,
+    4.0,
+    2.2
+   ],
+   "energy": 1500,
+   "color": "#E0A33E",
+   "aim_at": [
+    0,
+    0,
+    0.8
+   ]
+  },
+  {
+   "type": "spot",
+   "location": [
+    3.6,
+    3.4,
+    1.2
+   ],
+   "energy": 450,
+   "color": "#6FA8FF",
+   "aim_at": [
+    0,
+    0,
+    0.8
+   ]
+  }
+ ],
+ "duration_s": 3.5,
+ "objects": [
+  {
+   "type": "plane",
+   "name": "floor",
+   "location": [
+    0,
+    0,
+    0
+   ],
+   "params": {
+    "size": 40
+   },
+   "material": {
+    "color": "#0E0E12",
+    "roughness": 0.3,
+    "metallic": 0.1
+   }
+  },
+  {
+   "type": "box",
+   "name": "red_body",
+   "location": [
+    0,
+    0,
+    0.48
+   ],
+   "params": {
+    "size": 2
+   },
+   "scale": [
+    1.6,
+    0.8,
+    0.48
+   ],
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s00",
+   "location": [
+    -1.2,
+    -0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s01",
+   "location": [
+    -1.2,
+    0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s10",
+   "location": [
+    -0.4,
+    -0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s11",
+   "location": [
+    -0.4,
+    0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s20",
+   "location": [
+    0.4,
+    -0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s21",
+   "location": [
+    0.4,
+    0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s30",
+   "location": [
+    1.2,
+    -0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  },
+  {
+   "type": "cylinder",
+   "name": "red_s31",
+   "location": [
+    1.2,
+    0.4,
+    1.06
+   ],
+   "params": {
+    "radius": 0.24,
+    "depth": 0.2
+   },
+   "material": {
+    "color": "#C91A09",
+    "roughness": 0.22,
+    "metallic": 0.0
+   }
+  }
+ ],
+ "camera": {
+  "lens_mm": 40,
+  "fstop": 2.2,
+  "focus_object": "red_body",
+  "keys": [
+   {
+    "t": 0.0,
+    "location": [
+     5.6,
+     -7.6,
+     1.3
+    ],
+    "rotation_deg": [
+     84,
+     0,
+     36
+    ]
+   },
+   {
+    "t": 3.5,
+    "location": [
+     4.6,
+     -6.3,
+     1.6
+    ],
+    "rotation_deg": [
+     81,
+     0,
+     33
+    ]
+   }
+  ]
+ }
+}
