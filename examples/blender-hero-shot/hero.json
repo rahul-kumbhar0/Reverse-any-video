@@ -1,0 +1,163 @@
+{
+ "duration_s": 2.5,
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "background": "#050507",
+ "objects": [
+  {
+   "type": "torus",
+   "name": "tire",
+   "location": [
+    0,
+    0,
+    1.45
+   ],
+   "rotation_deg": [
+    90,
+    0,
+    15
+   ],
+   "params": {
+    "major_radius": 1.0,
+    "minor_radius": 0.44
+   },
+   "material": {
+    "color": "#141416",
+    "roughness": 0.55,
+    "metallic": 0.0
+   },
+   "spin_z_deg_per_s": 14
+  },
+  {
+   "type": "cylinder",
+   "name": "hub",
+   "location": [
+    0,
+    0,
+    1.45
+   ],
+   "rotation_deg": [
+    90,
+    0,
+    0
+   ],
+   "params": {
+    "radius": 0.52,
+    "depth": 0.3
+   },
+   "material": {
+    "color": "#9A9AA0",
+    "roughness": 0.25,
+    "metallic": 0.95
+   }
+  },
+  {
+   "type": "plane",
+   "name": "floor",
+   "location": [
+    0,
+    0,
+    0
+   ],
+   "params": {
+    "size": 40
+   },
+   "material": {
+    "color": "#0E0E12",
+    "roughness": 0.3,
+    "metallic": 0.1
+   }
+  }
+ ],
+ "lights": [
+  {
+   "type": "area",
+   "location": [
+    3.5,
+    -2.5,
+    5.5
+   ],
+   "rotation_deg": [
+    30,
+    25,
+    0
+   ],
+   "energy": 170,
+   "size": 7
+  },
+  {
+   "type": "spot",
+   "location": [
+    -3.2,
+    4.0,
+    2.2
+   ],
+   "rotation_deg": [
+    55,
+    -50,
+    0
+   ],
+   "energy": 2600,
+   "color": "#E0A33E",
+   "aim_at": [
+    0,
+    0,
+    1.45
+   ]
+  },
+  {
+   "type": "spot",
+   "location": [
+    3.6,
+    3.4,
+    1.2
+   ],
+   "rotation_deg": [
+    75,
+    40,
+    0
+   ],
+   "energy": 700,
+   "color": "#6FA8FF",
+   "aim_at": [
+    0,
+    0,
+    1.45
+   ]
+  }
+ ],
+ "camera": {
+  "lens_mm": 65,
+  "fstop": 1.8,
+  "focus_object": "tire",
+  "keys": [
+   {
+    "t": 0.0,
+    "location": [
+     4.6,
+     -6.0,
+     1.5
+    ],
+    "rotation_deg": [
+     84,
+     0,
+     37
+    ]
+   },
+   {
+    "t": 2.5,
+    "location": [
+     3.8,
+     -5.0,
+     1.7
+    ],
+    "rotation_deg": [
+     82,
+     0,
+     34
+    ]
+   }
+  ]
+ }
+}
