@@ -64,6 +64,28 @@ Produces `audio/audio.json`: loudness envelope (1s bins), silence map, an estima
 music-vs-voice presence, and **beat-sync score** (fraction of cuts landing on loudness
 peaks — ≥0.5 means the edit is cut to the beat; encode that rule).
 
+### 4b. Motion deep-dive (required for any video with 3D or heavy motion)
+
+```bash
+python3 scripts/extract_motion.py "$VIDEO" "$WORK/motion" --times <6-10 interesting timestamps>
+```
+
+Each strip is 8 consecutive frames over 0.8s, tiled left-to-right. Read them and derive,
+per `references/3d-motion-playbook.md`: camera moves (push/orbit/rack-focus) and their
+easing (spacing pattern), element entrance easing, motion blur presence, particle
+behavior, and whether scene changes are cuts or morphs. Pick timestamps at scene changes
+and during hero moments.
+
+### 4c. Sound-design map
+
+```bash
+python3 scripts/detect_sfx.py "$VIDEO" "$WORK/sfx.json"
+```
+
+Onset events classified as impact/tap/whoosh/riser. Cross-reference event times with
+cuts/morphs: events within 0.15s of a visual change are its sound design. Encode the
+grammar (what sound accompanies what visual event) in the spec's `sfx` section.
+
 ### 5. Transcript
 
 Try in order; stop at the first that works:
@@ -92,6 +114,11 @@ designer. For each dimension write down concrete, reproducible values, not vibes
 - **Transitions**: hard cuts, whip, zoom punch-ins, slide — name what you actually see between consecutive shot frames.
 - **Motion**: Ken Burns on stills? scale pulses on beat? parallax?
 - **Recurring devices**: progress bars, chapter cards, emoji, lower-thirds, watermarks (note watermarks but DO NOT clone logos/handles).
+- **3D & lighting** (when the video has 3D): read `references/3d-motion-playbook.md`
+  first, then note the lighting rig (key direction/size, rim color, fill), materials
+  (roughness/metallic class per object), camera grammar and DOF depth, particle/sim
+  devices, and tone mapping feel. These go in the spec's `scene_3d` section — they are
+  what makes the recreation look "exact", so be precise.
 
 ### 7. Compile the style skill
 

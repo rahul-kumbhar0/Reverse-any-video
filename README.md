@@ -37,9 +37,10 @@ Copy `skills/reverse-video` and `skills/create-video` into your project's `.clau
 
 ## Requirements
 
-- **ffmpeg / ffprobe** (required) — all frame, scene, and audio extraction.
-- **Python 3.9+** (required) — analysis scripts, stdlib only.
-- **Node 18+ / Remotion** (optional) — highest-quality programmatic rendering.
+- **ffmpeg / ffprobe** (required) — all frame, scene, audio, and motion extraction.
+- **Python 3.9+** (required) — analysis scripts, stdlib only (numpy for SFX detection).
+- **Node 18+ / Remotion + Three.js** (recommended) — captions/compositing + real-time 3D (`--gl=swangle` headless).
+- **Blender via `pip install bpy`** (recommended) — photoreal 3D hero shots, headless CPU Cycles.
 - **yt-dlp** (optional) — ingest videos by URL instead of local file.
 - **whisper / whisper.cpp** (optional) — local transcription; Claude falls back to an available transcription MCP tool or frame-level caption OCR.
 
@@ -72,10 +73,20 @@ A generated style skill is a self-contained folder — commit it, or publish it 
 |---|---|---|
 | Probe | `ffprobe` | resolution, fps, duration, codecs, bitrate, rotation |
 | Cut detection | `ffmpeg scdet` | every hard cut → shot list with per-shot duration → pacing curve |
-| Frame sampling | `ffmpeg` | keyframe per shot + uniform grid, as PNGs for Claude's vision |
+| Frame sampling | `ffmpeg` | keyframe per shot + uniform grid, as contact sheets for Claude's vision |
+| Motion strips | `ffmpeg tile` | 8-frame bursts → camera moves, easing curves, morphs vs cuts |
 | Audio | `ffmpeg` + loudness filters | music vs. voice segments, loudness envelope, beat-synced cut check |
+| SFX map | FFT onset detection | every whoosh/tap/impact/riser, matched to visual events |
 | Transcript | whisper / MCP / OCR fallback | spoken script, hook line, CTA, words-per-second |
-| Vision pass | **Claude itself** | typography, palette, layout grid, caption style, transitions, motion verbs |
+| Vision pass | **Claude itself** | typography, palette, layout, captions, **3D lighting rig, materials, camera grammar** |
+
+And recreation is tiered like a real studio pipeline (see
+[`skills/reverse-video/references/3d-motion-playbook.md`](skills/reverse-video/references/3d-motion-playbook.md)):
+**Blender/Cycles** (headless `bpy`) renders photoreal hero shots from declarative scene
+specs — PBR materials, studio light rigs with `aim_at`, eased camera keyframes, DOF —
+**Three.js in Remotion** handles 3D that syncs with captions per-frame, generative-video
+MCP tools cover un-modelable b-roll, DOM/CSS covers UI mockups, and synthesized SFX
+(whoosh/tap/impact/riser, no sample packs) are placed by the extracted sound grammar.
 
 The vision pass is the heart of it: Claude reads the extracted frames like a designer, not a signal processor — it names the font *vibe*, the layout grid, the caption placement, the hook formula — and encodes all of it in `style-spec.json` (schema in [`skills/reverse-video/references/style-spec-schema.md`](skills/reverse-video/references/style-spec-schema.md)).
 

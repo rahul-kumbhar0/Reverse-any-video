@@ -89,6 +89,44 @@ reference didn't expose a dimension. Add fields freely — renderers must ignore
     "cta": "soft follow-CTA, final 3s"
   },
 
+  "scene_3d": {                                 // REQUIRED when the video contains 3D
+    "present": true,
+    "realism": "photoreal",                     // photoreal | stylized | data-viz | none
+    "lighting": {
+      "rig": "big soft key high-left 40°, warm amber rim behind-right, faint cool fill",
+      "key_softness": "large-area",
+      "rim_color": "#E0A33E",
+      "fill_color": "#6FA8FF",
+      "pools_on_floor": true,
+      "tone_mapping": "AgX/ACES filmic"
+    },
+    "materials": [
+      { "object": "tire", "class": "rubber", "color": "#141416", "roughness": 0.55, "metallic": 0 },
+      { "object": "mold", "class": "machined-steel", "roughness": 0.3, "metallic": 0.9 }
+    ],
+    "camera": {
+      "moves": ["slow push-in 3%/s on everything", "low-angle macro for hero objects",
+                 "orbit 15° on reveals"],
+      "easing": "ease-in-out full-shot; element entrances ease-out 300ms",
+      "dof": { "fstop": 1.8, "focus": "subject; background always melts" },
+      "motion_blur": true,
+      "micro_drift": true
+    },
+    "particles": ["rubber hairs as instanced scatter", "dust floating in light beams"],
+    "renderer_tier": "blender-photoreal"        // blender-photoreal | three-stylized | gen-video | dom
+  },
+
+  "sfx": {                                      // from detect_sfx.py + listening
+    "events_per_minute": 14,
+    "grammar": [
+      { "on": "camera move/morph", "sound": "whoosh", "dur_s": 0.4 },
+      { "on": "UI tap / text pop", "sound": "tap" },
+      { "on": "heavy object lands", "sound": "impact 60Hz" },
+      { "on": "pre-reveal", "sound": "riser 2s, cut at reveal" }
+    ],
+    "bed": "music -22dB under VO, or room tone; no dead air"
+  },
+
   "confidence": {                               // per top-level section
     "pacing": "high", "palette": "high", "typography": "medium",
     "captions": "high", "layout": "high", "motion": "medium",
