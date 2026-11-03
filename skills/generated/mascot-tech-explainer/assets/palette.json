@@ -1,0 +1,9 @@
+{
+  "background": "#0C0C0E",
+  "grid_lines": "rgba(255,255,255,0.08)",
+  "text_primary": "#FFFFFF",
+  "text_dimmed": "#9A9AA0",
+  "accent_amber": "#E0A33E",
+  "selection_blue": "#3478F6",
+  "ui_surface": "#1C1C1E"
+}
