@@ -1,6 +1,9 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { Nova, Pose, Viseme } from "./Nova";
+import { Kai } from "./Kai";
+
+const CHARACTERS = { nova: Nova, kai: Kai };
 
 /**
  * Drives Nova like a Character-Animator puppet (patterns adapted from
@@ -50,7 +53,9 @@ export const buildCues = (base: PoseCue[], words: TimedWord[] = [], triggers: Tr
 
 export const PuppetTrack: React.FC<{
   cues: PoseCue[]; lipsync?: LipSync; words?: TimedWord[]; triggers?: Triggers; fadeFrames?: number;
-}> = ({ cues, lipsync, words, triggers, fadeFrames = 3 }) => {
+  character?: keyof typeof CHARACTERS;
+}> = ({ cues, lipsync, words, triggers, fadeFrames = 3, character = "kai" }) => {
+  const C = CHARACTERS[character];
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
@@ -74,9 +79,9 @@ export const PuppetTrack: React.FC<{
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", transform: `translateY(${-bounce}px)` }}>
       {prev && fade < 1 ? (
-        <div style={{ position: "absolute", inset: 0, opacity: 1 - fade }}><Nova pose={prev.pose} {...common} /></div>
+        <div style={{ position: "absolute", inset: 0, opacity: 1 - fade }}><C pose={prev.pose} {...common} /></div>
       ) : null}
-      <div style={{ position: "absolute", inset: 0, opacity: fade }}><Nova pose={cur.pose} {...common} /></div>
+      <div style={{ position: "absolute", inset: 0, opacity: fade }}><C pose={cur.pose} {...common} /></div>
     </div>
   );
 };

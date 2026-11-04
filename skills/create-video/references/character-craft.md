@@ -20,6 +20,12 @@ Top explainer reels use a **2D cel-shaded illustrated puppet**, not a 3D charact
   (hair back/front, ears, face shading, blush, nose), brows ×4, eyes with 3 blink states,
   glasses with glints, 7 visemes, 2 arms × 11 poses with 6 hand shapes. Outlines are a
   dark under-stroke; shading is one shadow tone + one highlight (cel look).
+- `templates/remotion/src/puppet/Kai.tsx` — **default presenter**, original, semi-realistic
+  illustrated style matching pro explainer channels: gradient-shaded skin, almond eyes with
+  irises/catchlights/lids, real nose and lips (per-viseme lip shapes with teeth/tongue),
+  textured curly-top with fade, stubble, mustard overshirt with rolled sleeves (bare
+  forearms), knuckled hands, and the signature orange headphones around the neck. Same
+  pose/viseme API as Nova: `<PuppetTrack character="kai" ...>` (or `"nova"` for flat style).
 - `templates/remotion/src/puppet/PuppetTrack.tsx` — pose cues + 3-frame crossfade, lip-sync
   frames, deterministic blinks, drift/nod/breathe.
 - `scripts/lipsync.py` — voiceover → per-frame visemes. Primary engine: **Rhubarb Lip Sync**
