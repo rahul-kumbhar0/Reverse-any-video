@@ -76,6 +76,14 @@ easing (spacing pattern), element entrance easing, motion blur presence, particl
 behavior, and whether scene changes are cuts or morphs. Pick timestamps at scene changes
 and during hero moments.
 
+### 4b2. Presenter/mascot mechanics (if the video has a character)
+
+Extract a 12-frame strip around a pose change (crop to the character, `fps=24,tile=6x2`).
+Record: is it 2D puppet or 3D; lip-sync present (mouth changes within a held pose?); pose
+library seen; crossfade length in frames; size/placement; blink/drift. Encode the
+*mechanics* in the spec's `presenter` section — never the character's look (see
+`create-video/references/character-craft.md`).
+
 ### 4c. Sound-design map
 
 ```bash

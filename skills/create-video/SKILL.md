@@ -108,6 +108,12 @@ python3 scripts/assemble.py timeline.json style-spec.json out/video.mp4 --assets
 Composite: render Tier 1–3 shots to MP4 first, then place them in the Remotion timeline
 as `<OffthreadVideo>` layers with captions/mascot on top.
 
+### 4a. Presenter puppet
+
+If the style has a presenter, read `references/character-craft.md`: generate visemes with
+`scripts/lipsync.py` from the final VO, cue poses on caption beats, render with
+`<PuppetTrack>` (original character only — never the reference creator's mascot).
+
 ### 4b. Sound design (never ship silent-by-default)
 
 Follow the spec's `sfx.grammar`. Synthesize the effects locally:

@@ -468,3 +468,148 @@ def _bloom_png(png):
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", png,
                     "-vf", BLOOM_FILTER, "-y", tmp], check=True)
     os.replace(tmp, png)
+
+
+# ----------------------------------------------------------------------------- detailing
+# The reference's "top detailing" is mostly surface response, not polygons: brushed metal
+# streaks, roughness that varies (smudges/wear), tiny bumps, plus small hardware (screws,
+# SMD parts, vias, markings, flex cables). These helpers add that layer.
+
+
+def _nodes(mat):
+    nt = mat.node_tree
+    return nt, nt.nodes, nt.links, nt.nodes["Principled BSDF"]
+
+
+def micro_surface(mat, scale=180.0, bump=0.08, rough_var=0.12, seed=0.0):
+    """Roughness variation + micro bump from noise: kills the 'perfect CG' sheen."""
+    nt, N, L, b = _nodes(mat)
+    tc = N.new("ShaderNodeTexCoord")
+    noise = N.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = scale
+    noise.inputs["Detail"].default_value = 6.0
+    if "W" in noise.inputs:
+        noise.noise_dimensions = "4D"
+        noise.inputs["W"].default_value = seed
+    L.new(tc.outputs["Object"], noise.inputs["Vector"])
+    base_r = b.inputs["Roughness"].default_value
+    mr = N.new("ShaderNodeMapRange")
+    mr.inputs["To Min"].default_value = max(0.0, base_r - rough_var)
+    mr.inputs["To Max"].default_value = min(1.0, base_r + rough_var)
+    L.new(noise.outputs["Fac"], mr.inputs["Value"])
+    L.new(mr.outputs["Result"], b.inputs["Roughness"])
+    bp = N.new("ShaderNodeBump")
+    bp.inputs["Strength"].default_value = bump
+    bp.inputs["Distance"].default_value = 0.002
+    L.new(noise.outputs["Fac"], bp.inputs["Height"])
+    L.new(bp.outputs["Normal"], b.inputs["Normal"])
+    return mat
+
+
+def brushed(mat, axis="x", streak=600.0, bump=0.12):
+    """Brushed-metal streaks: noise stretched along one axis drives bump + anisotropy."""
+    nt, N, L, b = _nodes(mat)
+    tc = N.new("ShaderNodeTexCoord")
+    mp = N.new("ShaderNodeMapping")
+    sx, sy = (2.0, streak) if axis == "x" else (streak, 2.0)
+    mp.inputs["Scale"].default_value = (sx, sy, 2.0)
+    L.new(tc.outputs["Object"], mp.inputs["Vector"])
+    noise = N.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 1.0
+    noise.inputs["Detail"].default_value = 8.0
+    L.new(mp.outputs["Vector"], noise.inputs["Vector"])
+    bp = N.new("ShaderNodeBump")
+    bp.inputs["Strength"].default_value = bump
+    bp.inputs["Distance"].default_value = 0.001
+    L.new(noise.outputs["Fac"], bp.inputs["Height"])
+    L.new(bp.outputs["Normal"], b.inputs["Normal"])
+    if "Anisotropic" in b.inputs:
+        b.inputs["Anisotropic"].default_value = 0.7
+        if "Anisotropic Rotation" in b.inputs:
+            b.inputs["Anisotropic Rotation"].default_value = 0.0 if axis == "x" else 0.25
+    return mat
+
+
+def screw(name, loc, r=0.022, mat=None):
+    """Phillips pan-head screw: domed head + cross recess."""
+    head = cylinder(name, r, r * 0.55, mat=mat or M_alu_silver(), loc=loc, bevel=r * 0.35, verts=32)
+    slot = M_chip()
+    z = loc[2] + r * 0.28
+    a = rounded_slab(name + "_x", r * 1.3, r * 0.22, r * 0.12, mat=slot, loc=(loc[0], loc[1], z), bevel=0)
+    b_ = rounded_slab(name + "_y", r * 0.22, r * 1.3, r * 0.12, mat=slot, loc=(loc[0], loc[1], z), bevel=0)
+    return [head, a, b_]
+
+
+def smd_scatter(prefix, region, count, z, seed=5, sizes=((0.03, 0.016), (0.022, 0.012), (0.05, 0.03))):
+    """Scatter surface-mount parts (resistor/capacitor bodies with metal end caps)."""
+    rnd = random.Random(seed)
+    body_mats = [material("smd_tan", "#B08A5A", rough=0.5), material("smd_black", "#1A1A1C", rough=0.4),
+                 material("smd_gray", "#6F7176", rough=0.45)]
+    cap = M_alu_silver()
+    out = []
+    (x0, x1), (y0, y1) = region
+    for i in range(count):
+        w, d = rnd.choice(sizes)
+        x, y = rnd.uniform(x0, x1), rnd.uniform(y0, y1)
+        rot = rnd.random() < 0.5
+        if rot:
+            w, d = d, w
+        out.append(rounded_slab(f"{prefix}{i}", w, d, d * 0.6, mat=rnd.choice(body_mats),
+                                loc=(x, y, z + d * 0.3), bevel=0.0015))
+        ex = (w / 2 - min(w, d) * 0.12) if not rot else 0
+        ey = (d / 2 - min(w, d) * 0.12) if rot else 0
+        for sgn in (-1, 1):
+            out.append(rounded_slab(f"{prefix}{i}c{sgn}", min(w, d) * 0.25 if not rot else w * 1.02,
+                                    d * 1.02 if not rot else min(w, d) * 0.25, d * 0.62, mat=cap,
+                                    loc=(x + sgn * ex, y + sgn * ey, z + d * 0.3), bevel=0.001))
+    return out
+
+
+def via_grid(name, region, pitch, z, r=0.006, mat=None):
+    """Plated vias: tiny gold dots in a grid (array modifier on both axes)."""
+    (x0, x1), (y0, y1) = region
+    nx, ny = max(1, int((x1 - x0) / pitch)), max(1, int((y1 - y0) / pitch))
+    ob = cylinder(name, r, 0.002, mat=mat or M_gold(), loc=(x0, y0, z), bevel=0, verts=12)
+    for axis, n in ((0, nx), (1, ny)):
+        arr = ob.modifiers.new(f"arr{axis}", "ARRAY")
+        arr.count = n
+        arr.use_relative_offset = False
+        arr.use_constant_offset = True
+        off = [0, 0, 0]
+        off[axis] = pitch
+        arr.constant_offset_displace = off
+    return ob
+
+
+def text_label(name, body, size, loc, mat=None, rot=(0, 0, 0)):
+    """Flat printed marking (chip part numbers, silkscreen)."""
+    bpy.ops.object.text_add(location=loc, rotation=tuple(math.radians(a) for a in rot))
+    ob = bpy.context.object
+    ob.name = name
+    ob.data.body = body
+    ob.data.size = size
+    ob.data.align_x = "CENTER"
+    ob.data.align_y = "CENTER"
+    ob.data.extrude = 0.0004
+    ob.data.materials.append(mat or material("ink", "#8E9096", rough=0.6))
+    return ob
+
+
+def flex_cable(name, points, width=0.08, thickness=0.004, mat=None):
+    """Ribbon flex cable (amber polyimide) along a smooth path of (x,y,z) points."""
+    cu = bpy.data.curves.new(name, "CURVE")
+    cu.dimensions = "3D"
+    sp = cu.splines.new("BEZIER")
+    sp.bezier_points.add(len(points) - 1)
+    for bp_, p in zip(sp.bezier_points, points):
+        bp_.co = p
+        bp_.handle_left_type = bp_.handle_right_type = "AUTO"
+    cu.extrude = width / 2
+    cu.offset = 0
+    ob = bpy.data.objects.new(name, cu)
+    bpy.context.collection.objects.link(ob)
+    sol = ob.modifiers.new("solid", "SOLIDIFY")
+    sol.thickness = thickness
+    ob.data.materials.append(mat or material("kapton", "#C9781E", rough=0.3, coat=0.6,
+                                             transmission=0.25))
+    return ob

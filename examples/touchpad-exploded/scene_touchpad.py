@@ -36,16 +36,20 @@ layers = []              # (group_empty, assembled_z, exploded_z, label, anchor_
 # 1 · aluminium stiffener frame
 g_frame = group("L_frame")
 frame = rounded_slab("frame", W + 0.06, D + 0.06, 0.035, corner_r=R + 0.03, bevel=0.006,
-                     mat=M_alu_space_gray())
+                     mat=brushed(M_alu_space_gray(), axis="x"))
+frame_screws = []
+for i, (sx, sy) in enumerate([(-0.74, -0.45), (0.74, -0.45), (-0.74, 0.45), (0.74, 0.45)]):
+    frame_screws += screw(f"fscrew{i}", (sx, sy, 0.024), r=0.024)
 ribs = bar_array("frame_ribs", W - 0.2, 0.025, 0.02, 3, 0.28, axis="x",
                  mat=M_alu_space_gray(), loc=(0, 0, 0.026))
-parent([frame, ribs], g_frame)
+parent([frame, ribs] + frame_screws, g_frame)
 layers.append((g_frame, 0.0, 0.0, "frame", (W / 2 + 0.03, 0, 0)))
 
 # 2 · haptic engine + 4 force sensors
 g_haptic = group("L_haptic")
 engine = rounded_slab("engine", 0.62, 0.17, 0.09, corner_r=0.03, bevel=0.006,
-                      mat=M_alu_silver(), loc=(0, -0.05, 0))
+                      mat=brushed(M_alu_silver(), axis="x"), loc=(0, -0.05, 0))
+eng_screws = screw("escrew_l", (-0.27, -0.05, 0.05), r=0.016) + screw("escrew_r", (0.27, -0.05, 0.05), r=0.016)
 coil = torus("coil", 0.11, 0.035, mat=M_copper(), loc=(0, -0.05, 0.05), scale=(1.9, 0.62, 0.6))
 magnet = rounded_slab("magnet", 0.5, 0.05, 0.02, corner_r=0.01, bevel=0.003,
                       mat=M_chip(), loc=(0, -0.05, 0.055))
@@ -56,12 +60,13 @@ for i, (sx, sy) in enumerate([(-0.66, -0.38), (0.66, -0.38), (-0.66, 0.38), (0.6
     gauge = rounded_slab(f"gauge{i}", 0.08, 0.08, 0.01, corner_r=0.012, bevel=0.002,
                          mat=M_emissive(f"gauge_glow{i}", "#E0A33E", 0.0), loc=(sx, sy, 0.02))
     sensors += [base, gauge]
-parent([engine, coil, magnet] + sensors, g_haptic)
+parent([engine, coil, magnet] + eng_screws + sensors, g_haptic)
 layers.append((g_haptic, 0.06, 0.06 + GAP, "haptic", (0.33, -0.05, 0.04)))
 
 # 3 · controller PCB
 g_pcb = group("L_pcb")
-pcb = rounded_slab("pcb", W - 0.04, D - 0.04, 0.022, corner_r=R - 0.01, bevel=0.003, mat=M_pcb())
+pcb = rounded_slab("pcb", W - 0.04, D - 0.04, 0.022, corner_r=R - 0.01, bevel=0.003,
+                   mat=micro_surface(M_pcb(), scale=220, bump=0.05, rough_var=0.08))
 traces_x = bar_array("traces_x", W - 0.3, 0.006, 0.003, 9, 0.085, axis="x",
                      mat=M_copper(), loc=(0, 0.04, 0.0125))
 chip = rounded_slab("chip", 0.24, 0.24, 0.03, corner_r=0.012, bevel=0.004,
@@ -70,9 +75,15 @@ pins_l = bar_array("pins_l", 0.04, 0.012, 0.008, 9, 0.024, axis="x",
                    mat=M_gold(), loc=(0.29, -0.16, 0.014))
 pins_r = bar_array("pins_r", 0.04, 0.012, 0.008, 9, 0.024, axis="x",
                    mat=M_gold(), loc=(0.55, -0.16, 0.014))
-connector = rounded_slab("connector", 0.3, 0.07, 0.025, corner_r=0.01, bevel=0.003,
-                         mat=M_rubber_black(), loc=(-0.45, -0.38, 0.022))
-parent([pcb, traces_x, chip, pins_l, pins_r, connector], g_pcb)
+connector = rounded_slab("connector", 0.2, 0.07, 0.025, corner_r=0.01, bevel=0.003,
+                         mat=M_rubber_black(), loc=(-0.45, 0.4, 0.022))
+smds = smd_scatter("smd", ((-0.7, 0.1), (-0.05, 0.4)), 26, 0.011, seed=7)
+smds += smd_scatter("smdb", ((0.15, 0.7), (0.12, 0.42)), 14, 0.011, seed=11)
+vias = via_grid("vias", ((-0.7, 0.62), (-0.42, -0.12)), 0.05, 0.0115)
+mark = text_label("chip_mark", "TPC-2A\n4417 X9", 0.035, (0.42, -0.16, 0.0405))
+flex = flex_cable("flex", [(-0.45, 0.4, 0.03), (-0.45, 0.52, 0.05), (-0.45, 0.64, 0.0), (-0.45, 0.74, -0.1)],
+                  width=0.14)
+parent([pcb, traces_x, chip, pins_l, pins_r, connector, vias, mark, flex] + smds, g_pcb)
 layers.append((g_pcb, 0.15, 0.15 + 2 * GAP, "pcb", (0.42, -0.16, 0.05)))
 
 # 4 · capacitive sensor: thin clear film with crossing X/Y electrode grids
@@ -87,7 +98,8 @@ layers.append((g_sense, 0.185, 0.185 + 3 * GAP, "sense", (W / 2 - 0.06, 0.1, 0.0
 
 # 5 · etched glass top
 g_glass = group("L_glass")
-glass = rounded_slab("glass", W, D, 0.03, corner_r=R, bevel=0.007, mat=M_glass_frosted())
+glass = rounded_slab("glass", W, D, 0.03, corner_r=R, bevel=0.007,
+                     mat=micro_surface(M_glass_frosted(), scale=60, bump=0.03, rough_var=0.1))
 parent([glass], g_glass)
 layers.append((g_glass, 0.215, 0.215 + 4 * GAP, "glass", (W / 2, -0.15, 0.015)))
 

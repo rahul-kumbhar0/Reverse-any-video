@@ -1,0 +1,45 @@
+# Character craft — presenter puppets the way pro explainer channels do it
+
+## What the reference mascots actually are (from frame-by-frame study)
+
+Top explainer reels use a **2D cel-shaded illustrated puppet**, not a 3D character:
+- **Lip-sync**: inside one pose, the mouth changes every ~2 frames between viseme shapes
+  (closed, open, wide, round, smile) driven by the voiceover — Character-Animator style.
+- **Pose swaps, not animation**: arm/hand poses come from a library (point up, wave, shrug,
+  hands-on-head, thumbs-up, chin-think, presenting…) and switch on caption beats with a
+  **2–3 frame crossfade** (the ghosting is visible frame-by-frame).
+- **Life between swaps**: slow head drift/tilt, nods on stressed words, blinks every 2–4 s,
+  brow expression per pose.
+- **Placement**: bottom-centre, cropped at the waist, ~22–25% of frame height, always in
+  front of the 3D stage.
+
+## Our implementation
+
+- `templates/remotion/src/puppet/Nova.tsx` — original character "Nova" (curly hair, round
+  amber glasses, navy hoodie, orange stripe). Layers: torso, hood/drawstrings, neck, head
+  (hair back/front, ears, face shading, blush, nose), brows ×4, eyes with 3 blink states,
+  glasses with glints, 7 visemes, 2 arms × 11 poses with 6 hand shapes. Outlines are a
+  dark under-stroke; shading is one shadow tone + one highlight (cel look).
+- `templates/remotion/src/puppet/PuppetTrack.tsx` — pose cues + 3-frame crossfade, lip-sync
+  frames, deterministic blinks, drift/nod/breathe.
+- `scripts/lipsync.py` — voiceover → per-frame visemes (loudness + spectral centroid,
+  debounced to ≥2-frame holds) + energy for nods.
+
+```bash
+python3 scripts/lipsync.py vo.wav public/lipsync.json --offset <vo start s> --duration <video s>
+```
+```tsx
+<PuppetTrack cues={[{t:0,pose:"point_up"},{t:1.6,pose:"wow"}]} lipsync={lipsyncJson} />
+```
+
+## Rules
+
+1. **Never clone a real creator's mascot or avatar** (their outfit + face + accessories are
+   their brand identity). The reverse-video skill captures the *mechanics* (pose library,
+   crossfade timing, lip-sync, placement, size); `create-video` always uses an original
+   character. To make a new one, copy `Nova.tsx` and change palette/hair/outfit/accessory —
+   keep the layer structure so lip-sync and poses keep working.
+2. Cue a pose change on caption beats, ≥1 per 2.5 s, never mid-word if avoidable.
+3. Pose must match the line: claims → point_up, numbers/evidence → explain/present,
+   surprises → wow, payoff → thumbs_up/peace, doubt → shrug, process → think.
+4. Lip-sync must be generated from the *final* VO with the same offset it has in the edit.
