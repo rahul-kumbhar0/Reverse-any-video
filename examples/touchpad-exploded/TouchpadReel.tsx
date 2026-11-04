@@ -4,7 +4,9 @@ import {
   useCurrentFrame, useVideoConfig,
 } from "remotion";
 import anchors from "../public/touchpad.anchors.json";
-import { MascotSVG, SelectionBox } from "./Main";
+import { SelectionBox } from "./Main";
+import { PuppetTrack } from "./puppet/PuppetTrack";
+import lipsync from "../public/touchpad.lipsync.json";
 
 /* 3s test reel: exploded trackpad (Blender) + 3D-tracked labels + captions + mascot. */
 
@@ -99,8 +101,14 @@ export const TouchpadReel: React.FC = () => {
         Illustrative · layer gaps exaggerated
       </div>
 
-      {prev !== beat && poseFade < 1 ? <div style={{ ...mascotBox, opacity: 1 - poseFade }}><MascotSVG pose={prev.pose} /></div> : null}
-      <div style={{ ...mascotBox, opacity: poseFade }}><MascotSVG pose={beat.pose} /></div>
+      {/* vignette (reference look) */}
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0,0,0,0.55) 100%)" }} />
+      {/* presenter puppet: bottom-centre, cropped at the waist */}
+      <div style={{ position: "absolute", left: "50%", bottom: -70, transform: "translateX(-50%)",
+        width: height * 0.25 * (400 / 520), height: height * 0.25 }}>
+        <PuppetTrack cues={[{ t: 0, pose: "point_up" }, { t: 1.55, pose: "wow" }, { t: 2.45, pose: "thumbs_up" }]}
+          lipsync={lipsync as any} />
+      </div>
 
       <Audio src={staticFile("touchpad_audio.wav")} />
     </AbsoluteFill>

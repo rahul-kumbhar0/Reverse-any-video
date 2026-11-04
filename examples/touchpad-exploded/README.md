@@ -16,5 +16,5 @@ The reference workflow from `skills/create-video/references/blender-craft.md`, e
 6. **Composite**: `TouchpadReel.tsx` (Remotion) puts labels that track the 3D layers,
    captions, mascot and the audio track over the render.
 
-`TouchpadReel.tsx` imports `MascotSVG`/`SelectionBox` from the LEGO example's `Main.tsx`
+`TouchpadReel.tsx` imports `SelectionBox` from the LEGO example`s `Main.tsx`, the `puppet/` folder from the Remotion template (lip-sync: `python3 ../../skills/create-video/scripts/lipsync.py vo.wav public/touchpad.lipsync.json --offset 0.15 --duration 3`)
 and `three-kit.tsx` from the Remotion template; copy those into the same `src/`.
