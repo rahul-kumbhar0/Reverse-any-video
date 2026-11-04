@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Detect cuts with ffmpeg scene detection -> shot list + pacing stats.
+"""Detect cuts -> shot list + pacing stats.
+
+Engines: PySceneDetect AdaptiveDetector (Breakthrough/PySceneDetect, BSD-3; catches fast
+camera moves without false cuts) when installed, else ffmpeg scene scoring.
+Also reports PySceneDetect's fade (threshold) transitions when available.
 
 Usage: detect_scenes.py <video> <out.json> [--threshold 0.27] [--max-seconds N]
+                        [--engine auto|pyscenedetect|ffmpeg]
 """
 import argparse
 import json
@@ -33,19 +38,47 @@ def detect_cuts(video: str, threshold: float, max_seconds: float | None) -> list
     return sorted(set(cuts))
 
 
+def _secs(tc):
+    return tc.seconds if hasattr(tc, "seconds") else tc.get_seconds()
+
+
+def detect_cuts_psd(video: str, max_seconds: float | None):
+    """Hard cuts (AdaptiveDetector) + soft transitions: morphs/dissolves/camera pushes that
+    change the scene without a cut (ContentDetector at a sensitive threshold). Premium
+    explainers often have ~0 hard cuts but a scene change every 2-4 s; both matter."""
+    from scenedetect import AdaptiveDetector, ContentDetector, detect
+    end = f"{max_seconds}s" if max_seconds else None
+    hard = sorted({round(_secs(s[0]), 3) for s in detect(video, AdaptiveDetector(), end_time=end)[1:]})
+    soft_all = sorted({round(_secs(s[0]), 3) for s in detect(video, ContentDetector(threshold=18), end_time=end)[1:]})
+    soft = [t for t in soft_all if all(abs(t - h) > 0.25 for h in hard)]
+    return hard, soft
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("video")
     p.add_argument("out")
     p.add_argument("--threshold", type=float, default=0.27)
     p.add_argument("--max-seconds", type=float, default=None)
+    p.add_argument("--engine", default="auto", choices=["auto", "pyscenedetect", "ffmpeg"])
     args = p.parse_args()
 
     duration = ffprobe_duration(args.video)
     analyzed = min(duration, args.max_seconds) if args.max_seconds else duration
-    cuts = detect_cuts(args.video, args.threshold, args.max_seconds)
+    engine, soft = "ffmpeg", []
+    cuts = None
+    if args.engine in ("auto", "pyscenedetect"):
+        try:
+            cuts, soft = detect_cuts_psd(args.video, args.max_seconds)
+            engine = "pyscenedetect"
+        except Exception as e:  # noqa: BLE001
+            if args.engine == "pyscenedetect":
+                raise
+            print(f"pyscenedetect unavailable ({e}); using ffmpeg", file=sys.stderr)
+    if cuts is None:
+        cuts = detect_cuts(args.video, args.threshold, args.max_seconds)
 
-    bounds = [0.0] + cuts + [round(analyzed, 3)]
+    bounds = [0.0] + sorted(set(cuts) | set(soft)) + [round(analyzed, 3)]
     shots = []
     for i in range(len(bounds) - 1):
         start, end = bounds[i], bounds[i + 1]
@@ -68,13 +101,15 @@ def main() -> int:
         "closing_third_median_s": round(statistics.median(durs[-thirds:]), 3) if durs else None,
     }
 
-    result = {"threshold": args.threshold, "analyzed_seconds": round(analyzed, 3),
+    result = {"engine": engine, "soft_transitions": soft,
+              "note": "shots/pacing use hard cuts + soft transitions (morphs, dissolves, pushes)", "threshold": args.threshold, "analyzed_seconds": round(analyzed, 3),
               "full_duration_seconds": round(duration, 3), "cuts": cuts,
               "shots": shots, "pacing": pacing}
     with open(args.out, "w") as f:
         json.dump(result, f, indent=2)
     print(json.dumps({"shot_count": len(shots), "pacing": pacing}, indent=2))
-    if len(cuts) < 2:
+    print(f"hard cuts: {len(cuts)}  soft transitions: {len(soft)}  ({engine})")
+    if len(cuts) + len(soft) < 2:
         print("NOTE: <2 cuts detected. If the video is clearly edited, "
               "retry with --threshold 0.18", file=sys.stderr)
     return 0

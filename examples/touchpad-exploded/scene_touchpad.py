@@ -130,9 +130,17 @@ floor = rounded_slab("floor", 30, 30, 0.01, mat=material("floor", "#0B0B0E", rou
 # ---------------------------------------------------------------- light & camera
 aim = group("aim", (0, 0, 0.1))
 key_loc(aim, [(0.0, (0, 0, 0.12)), (0.35, (0, 0, 0.12)), (2.0, (0, 0.05, 0.95)), (DUR, (0, 0.05, 0.98))])
+studio_environment()                       # HDRI via $RAV_HDRI, else gradient studio world
+reflection_strips(target=(0, 0, 0.6), radius=3.2, height=3.4, count=3, strength=5.0)
 studio_rig(target=(0, 0, 0.6), scale=1.0, key_energy=480, rim_energy=850, fill_energy=420)
-camera(lens=35, fstop=4.0, focus=aim, target=aim,
-       keys=[(0.0, (2.55, -3.7, 1.75)), (DUR, (2.3, -3.95, 2.55))])
+
+
+def _far(p, a=(0, 0, 0.12), k=2.0):          # same framing at 2x lens: double the distance
+    return tuple(a[i] + (p[i] - a[i]) * k for i in range(3))
+
+
+camera(lens=70, fstop=5.6, focus=aim, target=aim,
+       keys=[(0.0, _far((2.55, -3.7, 1.75))), (DUR, _far((2.3, -3.95, 2.55)))])
 
 # ---------------------------------------------------------------- go
 os.makedirs(os.path.dirname(os.path.abspath(args.out)) or ".", exist_ok=True)
@@ -140,5 +148,5 @@ export_anchors(os.path.splitext(args.out)[0] + ".anchors.json")
 if args.anchors_only:
     print("OK: anchors")
     sys.exit(0)
-res = render(args.out, samples=args.samples, scale=args.scale, still_at=args.still)
+res = render(args.out, samples=args.samples, scale=args.scale, still_at=args.still, exposure=0.35)
 print("OK:", res)

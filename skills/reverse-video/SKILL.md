@@ -40,7 +40,10 @@ to downstream scripts) unless they want a full pass.
 python3 scripts/detect_scenes.py "$VIDEO" "$WORK/shots.json" --threshold 0.27
 ```
 
-Produces every cut timestamp plus per-shot durations. From `shots.json` compute the
+Uses PySceneDetect when installed: **hard cuts** (AdaptiveDetector) plus **soft
+transitions** (morphs/dissolves/camera pushes, ContentDetector) — premium explainers often
+have zero hard cuts but a scene change every ~2 s. Produces every boundary plus per-shot
+durations. From `shots.json` compute the
 **pacing profile**: median shot length, min/max, shots-per-minute, and whether pacing
 accelerates (hook fast → body slower → outro fast is a common formula). If it finds < 2
 cuts in a clearly edited video, retry with `--threshold 0.18`.
@@ -97,7 +100,7 @@ grammar (what sound accompanies what visual event) in the spec's `sfx` section.
 ### 5. Transcript
 
 Try in order; stop at the first that works:
-1. `whisper` / `whisper.cpp` CLI on `$WORK/audio/voice.wav`.
+1. `whisperx` / `whisper` / `whisper.cpp` on `$WORK/audio/voice.wav` (word timestamps).
 2. An available transcription MCP tool (e.g. ElevenLabs `creative_transcribe_audio`).
 3. If the video has burned-in captions (check the frames), transcribe them yourself from
    the contact sheets.
@@ -121,6 +124,8 @@ designer. For each dimension write down concrete, reproducible values, not vibes
 - **Shot types**: talking head / b-roll / screen recording / motion graphics / stock — and the ratio.
 - **Transitions**: hard cuts, whip, zoom punch-ins, slide — name what you actually see between consecutive shot frames.
 - **Motion**: Ken Burns on stills? scale pulses on beat? parallax?
+- **Isolate elements** when needed: `../create-video/scripts/cutout.py frame.png out.png`
+  (rembg) separates a presenter or product from the background for pose/shape study.
 - **Recurring devices**: progress bars, chapter cards, emoji, lower-thirds, watermarks (note watermarks but DO NOT clone logos/handles).
 - **3D & lighting** (when the video has 3D): read `references/3d-motion-playbook.md`
   first, then note the lighting rig (key direction/size, rim color, fill), materials

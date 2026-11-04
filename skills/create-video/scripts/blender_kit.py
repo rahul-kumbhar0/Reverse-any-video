@@ -147,6 +147,11 @@ def _finish(ob, mat=None, bevel=0.0, segments=3, smooth=True):
         mod.angle_limit = math.radians(40)
         mod.harden_normals = True
         mod.miter_outer = "MITER_ARC"
+        mod.use_clamp_overlap = True
+        wn = ob.modifiers.new("weighted_normal", "WEIGHTED_NORMAL")   # flat faces stay flat
+        wn.mode = "FACE_AREA"
+        wn.weight = 50
+        wn.keep_sharp = True
     if mat:
         ob.data.materials.append(mat)
     ob.select_set(False)
@@ -319,6 +324,7 @@ def light(kind, loc, energy, color="#FFFFFF", size=2.0, aim_at=None, spot_deg=55
     if L.data.type == "SPOT":
         L.data.spot_size = math.radians(spot_deg)
         L.data.spot_blend = blend
+        L.data.shadow_soft_size = 0.6        # point-source spots cast hard, distracting shadows
     if aim_at is not None:
         track(L, aim_at)
     return L
@@ -402,7 +408,7 @@ def export_anchors(path, width=1080, height=1920):
 
 
 def render(out_mp4, width=1080, height=1920, fps_out=30, samples=48, scale=0.5,
-           still_at=None, bloom=True, motion_blur=True):
+           still_at=None, bloom=True, motion_blur=True, exposure=0.0):
     """Cycles CPU render -> MP4 (motion-interpolated to fps_out, upscaled, optional bloom).
     still_at=<seconds> renders a single verification PNG instead (out_mp4 -> .png)."""
     s = bpy.context.scene
@@ -418,12 +424,19 @@ def render(out_mp4, width=1080, height=1920, fps_out=30, samples=48, scale=0.5,
     s.cycles.diffuse_bounces = 2
     s.cycles.caustics_reflective = False
     s.cycles.caustics_refractive = False
+    s.cycles.sample_clamp_indirect = 8.0        # kills fireflies (blender-rendering skill)
+    s.cycles.blur_glossy = 0.5
+    try:
+        s.cycles.denoising_input_passes = "RGB_ALBEDO_NORMAL"
+    except (AttributeError, TypeError):
+        pass
     s.render.use_persistent_data = True
     s.render.use_motion_blur = motion_blur
     s.render.motion_blur_shutter = 0.5
     s.render.resolution_x = int(width * scale)
     s.render.resolution_y = int(height * scale)
     s.view_settings.view_transform = "AgX"
+    s.view_settings.exposure = exposure
     try:
         s.view_settings.look = "AgX - Medium High Contrast"
     except TypeError:
@@ -613,3 +626,101 @@ def flex_cable(name, points, width=0.08, thickness=0.004, mat=None):
     ob.data.materials.append(mat or material("kapton", "#C9781E", rough=0.3, coat=0.6,
                                              transmission=0.25))
     return ob
+
+
+# ----------------------------------------------------------------------------- environments
+# "Shape the reflections, not the illumination" (EL4CTEO/blender-skills lighting-lookdev):
+# glossy products read as premium when long soft strips are *reflected* in them. These
+# emitters are invisible to the camera, so the background stays near-black.
+
+
+def reflection_strips(target=(0, 0, 0.6), radius=4.0, height=3.0, count=3, strength=6.0,
+                      color="#FFFFFF", length=6.0, width=0.6):
+    """Camera-invisible emissive strips arranged around the subject, for clean highlights."""
+    out = []
+    mat = material("strip_emit", color, emission=color, emission_strength=strength)
+    for i in range(count):
+        ang = math.radians(-150 + i * (120 / max(1, count - 1)))
+        loc = (target[0] + radius * math.cos(ang), target[1] + radius * math.sin(ang), height)
+        bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
+        ob = bpy.context.object
+        ob.name = f"refl_strip{i}"
+        ob.scale = (width, length, 1)
+        ob.data.materials.append(mat)
+        track(ob, target)
+        ob.visible_camera = False
+        ob.visible_shadow = False
+        out.append(ob)
+    return out
+
+
+def gradient_world(top="#2A2D33", bottom="#050507", strength=0.35, camera_color="#050507"):
+    """Studio gradient environment used for reflections/IBL, while the camera sees camera_color.
+    Stand-in for a studio HDRI when none is available."""
+    w = bpy.context.scene.world
+    nt = w.node_tree
+    N, L = nt.nodes, nt.links
+    for n in list(N):
+        if n.type != "OUTPUT_WORLD":
+            N.remove(n)
+    out = next(n for n in N if n.type == "OUTPUT_WORLD")
+    tc = N.new("ShaderNodeTexCoord")
+    sep = N.new("ShaderNodeSeparateXYZ")
+    L.new(tc.outputs["Generated"], sep.inputs[0])
+    ramp = N.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = 0.45
+    ramp.color_ramp.elements[0].color = hex_rgba(bottom)
+    ramp.color_ramp.elements[1].position = 0.85
+    ramp.color_ramp.elements[1].color = hex_rgba(top)
+    L.new(sep.outputs["Z"], ramp.inputs["Fac"])
+    env_bg = N.new("ShaderNodeBackground")
+    env_bg.inputs["Strength"].default_value = strength
+    L.new(ramp.outputs["Color"], env_bg.inputs["Color"])
+    cam_bg = N.new("ShaderNodeBackground")
+    cam_bg.inputs["Color"].default_value = hex_rgba(camera_color)
+    lp = N.new("ShaderNodeLightPath")
+    mix = N.new("ShaderNodeMixShader")
+    L.new(lp.outputs["Is Camera Ray"], mix.inputs["Fac"])
+    L.new(env_bg.outputs["Background"], mix.inputs[1])
+    L.new(cam_bg.outputs["Background"], mix.inputs[2])
+    L.new(mix.outputs["Shader"], out.inputs["Surface"])
+    return w
+
+
+def hdri_world(path, strength=0.8, rotation_deg=0.0, camera_color="#050507"):
+    """Image-based lighting from an HDRI (e.g. Poly Haven CC0 'studio_small_09'), camera sees
+    camera_color. Fetch with scripts/fetch_assets.py when the network allows."""
+    w = bpy.context.scene.world
+    nt = w.node_tree
+    N, L = nt.nodes, nt.links
+    for n in list(N):
+        if n.type != "OUTPUT_WORLD":
+            N.remove(n)
+    out = next(n for n in N if n.type == "OUTPUT_WORLD")
+    tc = N.new("ShaderNodeTexCoord")
+    mp = N.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (0, 0, math.radians(rotation_deg))
+    env = N.new("ShaderNodeTexEnvironment")
+    env.image = bpy.data.images.load(path)
+    L.new(tc.outputs["Generated"], mp.inputs["Vector"])
+    L.new(mp.outputs["Vector"], env.inputs["Vector"])
+    bg = N.new("ShaderNodeBackground")
+    bg.inputs["Strength"].default_value = strength
+    L.new(env.outputs["Color"], bg.inputs["Color"])
+    cam_bg = N.new("ShaderNodeBackground")
+    cam_bg.inputs["Color"].default_value = hex_rgba(camera_color)
+    lp = N.new("ShaderNodeLightPath")
+    mix = N.new("ShaderNodeMixShader")
+    L.new(lp.outputs["Is Camera Ray"], mix.inputs["Fac"])
+    L.new(bg.outputs["Background"], mix.inputs[1])
+    L.new(cam_bg.outputs["Background"], mix.inputs[2])
+    L.new(mix.outputs["Shader"], out.inputs["Surface"])
+    return w
+
+
+def studio_environment(hdri=None, **kw):
+    """HDRI if a file is given/available (env RAV_HDRI), else the gradient studio world."""
+    path = hdri or os.environ.get("RAV_HDRI")
+    if path and os.path.exists(path):
+        return hdri_world(path, **kw)
+    return gradient_world()

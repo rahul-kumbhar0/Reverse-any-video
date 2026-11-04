@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
-"""Audio -> per-frame mouth visemes for a puppet (Character-Animator-style lip-sync).
+"""Voiceover -> per-frame mouth visemes for the presenter puppet.
 
-Reads a voiceover, and for each video frame decides a viseme from loudness and spectral
-balance:
-  silence                -> rest   (or mbp for the first frame after speech: lips closing)
-  quiet / onset          -> mbp
-  bright (high centroid) -> ee     (s, t, ee, ih sounds)
-  dark (low centroid)    -> oh / uw (o, u, w sounds; uw when quieter)
-  loud + mid             -> aa     (open vowels)
-Each viseme is held >= --hold frames (the reference holds ~2 frames; faster reads as
-jitter). Also emits a smoothed energy track for head nods.
+Engines, best first:
+  1. Rhubarb Lip Sync (DanielSWolf/rhubarb-lip-sync, MIT): phonetic recognition -> the
+     Hanna-Barbera mouth set A-H + X, mapped to Nova visemes. Pass the script with
+     --dialog for much better accuracy. Binary via $RHUBARB_PATH, PATH, or
+     ~/.cache/reverse-any-video/rhubarb/rhubarb (scripts/install_tools.sh).
+  2. Heuristic (no install): loudness + spectral centroid, debounced to >=2-frame holds.
 
-Usage: lipsync.py <voice.wav|mp3> <out.json> [--fps 30] [--offset 0.15] [--hold 2]
-Output: {"fps":30,"frames":[{"v":"aa","e":0.62}, ...]}
+Usage: lipsync.py voice.wav out.json [--dialog "script"] [--fps 30] [--offset 0.15]
+                  [--duration 3.0] [--engine auto|rhubarb|heuristic]
+Output: {"fps":30,"engine":"rhubarb","frames":[{"v":"aa","e":0.62}, ...]}
+  v = Nova viseme, e = smoothed speech energy (0..1) for nods/bounce.
 """
 import argparse
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import wave
 
 import numpy as np
+
+RHUBARB_TO_VISEME = {"A": "mbp", "B": "ee", "C": "eh", "D": "aa", "E": "oh",
+                     "F": "uw", "G": "fv", "H": "l", "X": "rest"}
 
 
 def load(path, sr=16000):
@@ -33,71 +37,119 @@ def load(path, sr=16000):
     return x, sr
 
 
-def main() -> int:
-    p = argparse.ArgumentParser()
-    p.add_argument("audio")
-    p.add_argument("out")
-    p.add_argument("--fps", type=int, default=30)
-    p.add_argument("--offset", type=float, default=0.0, help="seconds of silence before audio starts in the video")
-    p.add_argument("--hold", type=int, default=2)
-    p.add_argument("--duration", type=float, default=None, help="pad/trim to this many seconds")
-    args = p.parse_args()
-
-    x, sr = load(args.audio)
-    hop = sr / args.fps
+def energy_track(x, sr, fps):
+    hop = sr / fps
+    n = int(len(x) / hop)
     win = int(sr * 0.04)
-    n_audio = int(len(x) / hop)
-    pre = int(round(args.offset * args.fps))
-    total = int(round(args.duration * args.fps)) if args.duration else pre + n_audio
-
-    rms, cen = np.zeros(n_audio), np.zeros(n_audio)
-    freqs = np.fft.rfftfreq(win, 1 / sr)
-    for i in range(n_audio):
-        a = int(i * hop)
-        seg = x[a:a + win]
-        if len(seg) < win:
-            seg = np.pad(seg, (0, win - len(seg)))
-        rms[i] = np.sqrt(np.mean(seg ** 2))
-        mag = np.abs(np.fft.rfft(seg * np.hanning(win)))
-        cen[i] = (mag * freqs).sum() / (mag.sum() + 1e-9)
-
+    rms = np.array([np.sqrt(np.mean(np.pad(x[int(i * hop):int(i * hop) + win], (0, win))[:win] ** 2))
+                    for i in range(n)])
     db = 20 * np.log10(rms + 1e-9)
     speech = db[db > -45]
     ref = np.percentile(speech, 90) if len(speech) else -20
-    norm = np.clip((db - (ref - 30)) / 30, 0, 1)            # 0 = silence, 1 = loud speech
-    c_lo, c_hi = (np.percentile(cen[norm > 0.2], [30, 75]) if (norm > 0.2).sum() > 5 else (900, 2500))
+    norm = np.clip((db - (ref - 30)) / 30, 0, 1)
+    return norm, np.convolve(norm, np.ones(5) / 5, mode="same")
 
+
+def find_rhubarb():
+    for c in (os.environ.get("RHUBARB_PATH"), shutil.which("rhubarb"),
+              os.path.expanduser("~/.cache/reverse-any-video/rhubarb/rhubarb")):
+        if c and os.path.exists(c):
+            return c
+    return None
+
+
+def via_rhubarb(path, fps, n_frames, dialog):
+    exe = find_rhubarb()
+    if not exe:
+        raise FileNotFoundError("rhubarb not installed")
+    with tempfile.TemporaryDirectory() as tmp:
+        wav = os.path.join(tmp, "v.wav")
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", path, "-ac", "1", "-ar", "44100",
+                        "-c:a", "pcm_s16le", "-y", wav], check=True)
+        cmd = [exe, "-q", "-f", "json", "--extendedShapes", "GHX", wav, "-o", os.path.join(tmp, "o.json")]
+        if dialog:
+            dfile = os.path.join(tmp, "d.txt")
+            open(dfile, "w").write(dialog)
+            cmd[1:1] = ["-d", dfile]
+        subprocess.run(cmd, check=True, capture_output=True)
+        cues = json.load(open(os.path.join(tmp, "o.json")))["mouthCues"]
+    out = []
+    for f in range(n_frames):
+        t = (f + 0.5) / fps
+        v = next((c["value"] for c in cues if c["start"] <= t < c["end"]), "X")
+        out.append(RHUBARB_TO_VISEME.get(v, "rest"))
+    return out
+
+
+def via_heuristic(x, sr, fps, norm, hold):
+    hop = sr / fps
+    win = int(sr * 0.04)
+    freqs = np.fft.rfftfreq(win, 1 / sr)
+    cen = []
+    for i in range(len(norm)):
+        seg = np.pad(x[int(i * hop):int(i * hop) + win], (0, win))[:win]
+        mag = np.abs(np.fft.rfft(seg * np.hanning(win)))
+        cen.append((mag * freqs).sum() / (mag.sum() + 1e-9))
+    cen = np.array(cen)
+    voiced = norm > 0.2
+    c_lo, c_hi = np.percentile(cen[voiced], [30, 75]) if voiced.sum() > 5 else (900, 2500)
     raw = []
-    for i in range(n_audio):
-        e = norm[i]
+    for e, c in zip(norm, cen):
         if e < 0.12:
             raw.append("rest")
         elif e < 0.3:
             raw.append("mbp")
-        elif cen[i] >= c_hi:
+        elif c >= c_hi:
             raw.append("ee")
-        elif cen[i] <= c_lo:
+        elif c <= c_lo:
             raw.append("oh" if e > 0.55 else "uw")
         else:
-            raw.append("aa" if e > 0.6 else "ee")
-
-    # hold each viseme >= hold frames (debounce)
-    vis, cur, held = [], "rest", args.hold
+            raw.append("aa" if e > 0.6 else "eh")
+    vis, cur, held = [], "rest", hold
     for v in raw:
-        if v != cur and held >= args.hold:
+        if v != cur and held >= hold:
             cur, held = v, 0
         vis.append(cur)
         held += 1
+    return vis
 
-    energy = np.convolve(norm, np.ones(5) / 5, mode="same")
+
+def main() -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("audio")
+    p.add_argument("out")
+    p.add_argument("--dialog", default=None, help="the spoken script (improves Rhubarb accuracy)")
+    p.add_argument("--fps", type=int, default=30)
+    p.add_argument("--offset", type=float, default=0.0)
+    p.add_argument("--duration", type=float, default=None)
+    p.add_argument("--hold", type=int, default=2)
+    p.add_argument("--engine", default="auto", choices=["auto", "rhubarb", "heuristic"])
+    a = p.parse_args()
+
+    x, sr = load(a.audio)
+    norm, energy = energy_track(x, sr, a.fps)
+    n = len(norm)
+    vis, used = None, None
+    if a.engine in ("auto", "rhubarb"):
+        try:
+            vis, used = via_rhubarb(a.audio, a.fps, n, a.dialog), "rhubarb"
+        except Exception as e:  # noqa: BLE001
+            if a.engine == "rhubarb":
+                raise
+            print(f"rhubarb unavailable ({e}); using heuristic", file=sys.stderr)
+    if vis is None:
+        vis, used = via_heuristic(x, sr, a.fps, norm, a.hold), "heuristic"
+
+    pre = int(round(a.offset * a.fps))
+    total = int(round(a.duration * a.fps)) if a.duration else pre + n
     frames = [{"v": "rest", "e": 0.0}] * pre
     frames += [{"v": v, "e": round(float(e), 3)} for v, e in zip(vis, energy)]
     frames = (frames + [{"v": "rest", "e": 0.0}] * max(0, total - len(frames)))[:total]
-
-    with open(args.out, "w") as f:
-        json.dump({"fps": args.fps, "frames": frames}, f)
-    counts = {k: sum(1 for fr in frames if fr["v"] == k) for k in ("rest", "mbp", "ee", "aa", "oh", "uw")}
-    print(json.dumps({"frames": len(frames), "visemes": counts}))
+    json.dump({"fps": a.fps, "engine": used, "frames": frames}, open(a.out, "w"))
+    counts = {}
+    for fr in frames:
+        counts[fr["v"]] = counts.get(fr["v"], 0) + 1
+    print(json.dumps({"engine": used, "frames": len(frames), "visemes": counts}))
     return 0
 
 

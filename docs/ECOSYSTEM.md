@@ -61,6 +61,26 @@ unsuitable for this MIT repo).
 - AGPL/GPL projects (OpenMontage, BlenderProc) and "custom" licenses: study only.
 - CC0 assets (Poly Haven, ambientCG) can ship in examples freely.
 
+## Integration status (v0.3)
+
+| Project | Status | Where |
+|---|---|---|
+| Rhubarb Lip Sync | ✅ integrated (primary lip-sync) | `create-video/scripts/lipsync.py`, Nova visemes |
+| claude-codes-influencers patterns | ✅ adapted (keyword triggers, double blink, bounce) | `puppet/PuppetTrack.tsx` |
+| WhisperX | ✅ integrated (preferred when its models are available) | `scripts/align_words.py` |
+| PocketSphinx (Rhubarb's recognizer) | ✅ integrated (offline forced alignment) | `scripts/align_words.py` |
+| Kokoro-82M (kokoro-onnx) | ✅ integrated (default voice) | `scripts/tts.py` |
+| Chatterbox | ⚪ documented alternative (GPU recommended) | `scripts/tts.py` docstring |
+| PySceneDetect | ✅ integrated (hard cuts + soft transitions) | `reverse-video/scripts/detect_scenes.py` |
+| rembg | ✅ integrated | `scripts/cutout.py` |
+| Poly Haven / ambientCG | ✅ integrated (fetcher + HDRI world; gradient fallback) | `scripts/fetch_assets.py`, `blender_kit.hdri_world` |
+| EL4CTEO/blender-skills | ✅ installed by `install_tools.sh`; rules applied in `blender_kit` (weighted normals, reflection strips, firefly clamp, 70–135 mm lens) | |
+| mcp-for-blender | ✅ documented setup | `docs/BLENDER_MCP.md` |
+| Freesound | ✅ integrated (API key; synth fallback) | `scripts/fetch_sfx.py` |
+| OpenMontage, anything2explainer, video-talkcraft, vox-director | 📖 study only (license) | |
+| Hunyuan3D / TRELLIS | ⚪ needs GPU; not bundled | |
+| Manim, HyperFrames | ⚪ alternative renderers, not bundled | |
+
 ## Recommended integration order
 
 1. Rhubarb in `lipsync.py` (+ map A–H/X onto Nova's visemes).

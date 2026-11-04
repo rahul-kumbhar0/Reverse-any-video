@@ -22,11 +22,16 @@ Top explainer reels use a **2D cel-shaded illustrated puppet**, not a 3D charact
   dark under-stroke; shading is one shadow tone + one highlight (cel look).
 - `templates/remotion/src/puppet/PuppetTrack.tsx` — pose cues + 3-frame crossfade, lip-sync
   frames, deterministic blinks, drift/nod/breathe.
-- `scripts/lipsync.py` — voiceover → per-frame visemes (loudness + spectral centroid,
-  debounced to ≥2-frame holds) + energy for nods.
+- `scripts/lipsync.py` — voiceover → per-frame visemes. Primary engine: **Rhubarb Lip Sync**
+  (phonetic, Hanna-Barbera A–H + X, mapped to Nova's mbp/ee/eh/aa/oh/uw/fv/l/rest; pass the
+  script with `--dialog`). Fallback: loudness + spectral centroid heuristic. Also emits energy.
+- `scripts/align_words.py` — word timestamps for captions and **keyword-triggered poses**
+  (`<PuppetTrack triggers={{ five: { pose: "wow", dur: 1 } }} words={...}>`), the trigger
+  pattern adapted from kevinbadi/claude-codes-influencers (MIT). Blinks include an
+  occasional double-blink; the body bounces with speech loudness.
 
 ```bash
-python3 scripts/lipsync.py vo.wav public/lipsync.json --offset <vo start s> --duration <video s>
+python3 scripts/lipsync.py vo.wav public/lipsync.json --dialog "<script>" --offset <vo start s> --duration <video s>
 ```
 ```tsx
 <PuppetTrack cues={[{t:0,pose:"point_up"},{t:1.6,pose:"wow"}]} lipsync={lipsyncJson} />

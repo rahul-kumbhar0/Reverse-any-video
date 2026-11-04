@@ -7,6 +7,8 @@ import anchors from "../public/touchpad.anchors.json";
 import { SelectionBox } from "./Main";
 import { PuppetTrack } from "./puppet/PuppetTrack";
 import lipsync from "../public/touchpad.lipsync.json";
+import words from "../public/touchpad.words.json";
+import { KaraokeCaption } from "./captions/KaraokeCaption";
 
 /* 3s test reel: exploded trackpad (Blender) + 3D-tracked labels + captions + mascot. */
 
@@ -89,13 +91,11 @@ export const TouchpadReel: React.FC = () => {
       <OffthreadVideo src={staticFile("touchpad.mp4")} muted style={{ width: "100%", height: "100%" }} />
       {LABELS.map((l) => <TrackedLabel key={l.id} id={l.id} text={l.text} showAt={l.at} t={t} />)}
 
-      {/* caption band */}
-      <div style={{ position: "absolute", top: height * 0.07, left: "6%", right: "6%", opacity: capIn,
-        transform: `translateY(${(1 - capIn) * 8}px)`, fontFamily: FONT, fontSize: height * 0.032, textAlign: "center" }}>
-        {beat.words.map((w, i) => w.k === "box"
-          ? <SelectionBox key={i} draw={boxDraw}>{w.t}</SelectionBox>
-          : <span key={i} style={{ color: w.k === "bold" ? C.white : C.dim, fontWeight: w.k === "bold" ? 700 : 400, margin: "0 6px" }}>{w.t}</span>)}
-      </div>
+      {/* word-timed karaoke captions (align_words.py) */}
+      <KaraokeCaption words={words.words} phrases={[
+        { from: 0, to: 3, styles: { 3: "box" }, text: { 3: "trackpad?" } },
+        { from: 4, to: 5, styles: { 4: "box", 5: "bold" }, text: { 5: "layers." } },
+      ]} />
 
       <div style={{ position: "absolute", bottom: "17.5%", left: "4%", fontFamily: FONT, fontSize: 21, color: "#6E6E74" }}>
         Illustrative · layer gaps exaggerated
@@ -106,7 +106,8 @@ export const TouchpadReel: React.FC = () => {
       {/* presenter puppet: bottom-centre, cropped at the waist */}
       <div style={{ position: "absolute", left: "50%", bottom: -70, transform: "translateX(-50%)",
         width: height * 0.25 * (400 / 520), height: height * 0.25 }}>
-        <PuppetTrack cues={[{ t: 0, pose: "point_up" }, { t: 1.55, pose: "wow" }, { t: 2.45, pose: "thumbs_up" }]}
+        <PuppetTrack cues={[{ t: 0, pose: "explain" }, { t: 2.55, pose: "thumbs_up" }]}
+          words={words.words} triggers={{ trackpad: { pose: "point_up", dur: 0.7 }, five: { pose: "wow", dur: 1.0 } }}
           lipsync={lipsync as any} />
       </div>
 

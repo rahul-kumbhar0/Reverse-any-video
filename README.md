@@ -44,6 +44,20 @@ Copy `skills/reverse-video` and `skills/create-video` into your project's `.clau
 - **yt-dlp** (optional) — ingest videos by URL instead of local file.
 - **whisper / whisper.cpp** (optional) — local transcription; Claude falls back to an available transcription MCP tool or frame-level caption OCR.
 
+### One-command tool install
+
+```bash
+bash scripts/install_tools.sh
+```
+
+Installs and wires: Rhubarb Lip Sync, Kokoro-82M TTS, PocketSphinx word alignment (WhisperX
+optional), PySceneDetect, rembg, Blender (`bpy`), the EL4CTEO Blender agent skills, and a
+Poly Haven studio HDRI. Optional: `FREESOUND_API_KEY` for real CC0 sound effects, and a live
+Blender via MCP (`docs/BLENDER_MCP.md`). Credits and licenses: `docs/ECOSYSTEM.md`.
+
+> **Remotion license:** free for individuals and small teams; larger companies need a
+> Remotion company license (remotion.dev/license).
+
 ## Usage
 
 ### 1. Reverse-engineer a video

@@ -12,7 +12,12 @@ import React from "react";
 export type Pose =
   | "idle" | "point_up" | "wave" | "thumbs_up" | "shrug" | "explain"
   | "think" | "wow" | "present" | "peace" | "fist";
-export type Viseme = "rest" | "mbp" | "ee" | "aa" | "oh" | "uw" | "smile";
+export type Viseme = "rest" | "mbp" | "ee" | "eh" | "aa" | "oh" | "uw" | "fv" | "l" | "smile";
+
+/** Rhubarb Lip Sync shapes (Hanna-Barbera set) -> Nova visemes. */
+export const RHUBARB_TO_VISEME: Record<string, Viseme> = {
+  A: "mbp", B: "ee", C: "eh", D: "aa", E: "oh", F: "uw", G: "fv", H: "l", X: "rest",
+};
 export type Brows = "neutral" | "raised" | "worried" | "focused";
 
 const OUT = "#17141C";
@@ -147,6 +152,24 @@ const Mouth: React.FC<{ v: Viseme }> = ({ v }) => {
       return (<g>
         <ellipse cx={cx} cy={cy + 4} rx={11} ry={13} fill={MOUTH_INNER} stroke={OUT} strokeWidth={3} />
         <ellipse cx={cx} cy={cy + 11} rx={6} ry={3.5} fill={TONGUE} />
+      </g>);
+    case "eh":
+      return (<g>
+        <path d={`M${cx - 18} ${cy - 3} Q${cx} ${cy - 6} ${cx + 18} ${cy - 3} Q${cx + 15} ${cy + 13} ${cx} ${cy + 14} Q${cx - 15} ${cy + 13} ${cx - 18} ${cy - 3}Z`} fill={MOUTH_INNER} stroke={OUT} strokeWidth={3} />
+        <path d={`M${cx - 14} ${cy - 3} Q${cx} ${cy - 5} ${cx + 14} ${cy - 3} L${cx + 12} ${cy + 1} Q${cx} ${cy} ${cx - 12} ${cy + 1}Z`} fill="#fff" />
+        <ellipse cx={cx} cy={cy + 9} rx={7} ry={3.5} fill={TONGUE} />
+      </g>);
+    case "fv":
+      return (<g>
+        <path d={`M${cx - 17} ${cy - 2} Q${cx} ${cy - 5} ${cx + 17} ${cy - 2} Q${cx + 13} ${cy + 7} ${cx} ${cy + 8} Q${cx - 13} ${cy + 7} ${cx - 17} ${cy - 2}Z`} fill={MOUTH_INNER} stroke={OUT} strokeWidth={3} />
+        <path d={`M${cx - 13} ${cy - 2} Q${cx} ${cy - 4} ${cx + 13} ${cy - 2} L${cx + 12} ${cy + 3} Q${cx} ${cy + 2} ${cx - 12} ${cy + 3}Z`} fill="#fff" />
+        <path d={`M${cx - 15} ${cy + 5} Q${cx} ${cy + 1} ${cx + 15} ${cy + 5}`} stroke={OUT} strokeWidth={3} fill="none" strokeLinecap="round" />
+      </g>);
+    case "l":
+      return (<g>
+        <path d={`M${cx - 16} ${cy - 4} Q${cx} ${cy - 7} ${cx + 16} ${cy - 4} Q${cx + 14} ${cy + 15} ${cx} ${cy + 16} Q${cx - 14} ${cy + 15} ${cx - 16} ${cy - 4}Z`} fill={MOUTH_INNER} stroke={OUT} strokeWidth={3} />
+        <path d={`M${cx - 12} ${cy - 4} Q${cx} ${cy - 6} ${cx + 12} ${cy - 4} L${cx + 11} ${cy} Q${cx} ${cy - 1} ${cx - 11} ${cy}Z`} fill="#fff" />
+        <path d={`M${cx - 7} ${cy + 12} Q${cx} ${cy + 1} ${cx + 7} ${cy + 12}Z`} fill={TONGUE} />
       </g>);
     case "uw":
       return <ellipse cx={cx} cy={cy + 2} rx={7} ry={8} fill={MOUTH_INNER} stroke={OUT} strokeWidth={3} />;

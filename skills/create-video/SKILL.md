@@ -108,6 +108,20 @@ python3 scripts/assemble.py timeline.json style-spec.json out/video.mp4 --assets
 Composite: render Tier 1–3 shots to MP4 first, then place them in the Remotion timeline
 as `<OffthreadVideo>` layers with captions/mascot on top.
 
+### 3b. Voice, word timing, lip-sync (run in this order, from the FINAL script)
+
+```bash
+python3 scripts/tts.py "<script>" vo.wav --voice am_puck          # Kokoro-82M (Piper fallback;
+                                                                   #  or ElevenLabs MCP for premium)
+python3 scripts/align_words.py vo.wav "<script>" words.json --offset <vo start s>
+                                                                   # WhisperX > PocketSphinx > proportional
+python3 scripts/lipsync.py vo.wav lipsync.json --dialog "<script>" --offset <vo start s> --duration <len>
+                                                                   # Rhubarb (A-H,X) > heuristic
+```
+`words.json` drives `<KaraokeCaption>` (words fade in exactly when spoken; key word in the
+selection box) and keyword-triggered poses in `<PuppetTrack triggers=...>`.
+Install everything with `scripts/install_tools.sh` (repo root).
+
 ### 4a. Presenter puppet
 
 If the style has a presenter, read `references/character-craft.md`: generate visemes with
