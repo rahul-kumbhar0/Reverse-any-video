@@ -253,7 +253,7 @@ key_loc(aim, c["aim"])
 camera(lens=c["lens"], fstop=c["f"], focus=aim, target=aim, keys=c["cam"])
 
 # label anchors for the compositor
-anchor("gasket", gasket, (0, R - 0.045, 0))
+anchor("gasket", gasket, (-(R - 0.045), 0.0, 0))
 anchor("vent", vent, (0, 0, 0.05))
 anchor("weight", w_grp, (0.075, 0, 0.03))
 anchor("plug", plug, (0, 0, 0.02))
