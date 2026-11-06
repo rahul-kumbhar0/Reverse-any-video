@@ -122,6 +122,30 @@ python3 scripts/lipsync.py vo.wav lipsync.json --dialog "<script>" --offset <vo 
 selection box) and keyword-triggered poses in `<PuppetTrack triggers=...>`.
 Install everything with `scripts/install_tools.sh` (repo root).
 
+### 3c. Full-length videos (after a 3 s test passes)
+
+Proven on `examples/pressure-cooker` (45 s, 5 ray-traced shots + 2 graphics scenes):
+
+1. **Script as JSON lines** `{id, text, gap}`; generate TTS **per sentence**, trim silence,
+   concatenate with the gaps → exact sentence start/end times (`script_timed.json`).
+   Any language/accent: Kokoro `hm_omega`/`hf_beta` give Indian-English narration
+   (English text, Hindi voice); ElevenLabs MCP for premium voices.
+2. **Align words per sentence** (cut each sentence, `align_words.py --offset start`) —
+   robust for accents and long VO. Rhubarb lip-sync on the full VO with the full script.
+3. **Shot plan from the sentence times**: one visual idea per 1–3 sentences; use cheap
+   motion-graphics scenes (gauges, counters, cards over a blurred frame of the previous
+   shot) for numbers/evidence, ray-traced shots for objects and mechanisms.
+4. **One scene script, many shots** (`--shot hero|cutaway|...`): shared model, per-shot
+   camera + animation. Cutaways = boolean DIFFERENCE + solidified walls.
+5. **Verify every shot with a still** (scale 0.3, 16 samples) before the long render;
+   steam/smoke = many small low-alpha (≈0.13) emissive puffs, never a few big ones.
+6. **Render budget**: 6 fps for slow camera shots, 8 fps for particle/steam shots,
+   scale 0.4, 24 samples → ≈7 s/frame on 4 CPU cores, motion-interpolated to 30 fps.
+7. **Composite**: push-crossfades (0.3 s, scale 1.05→1) between shots, tracked labels per
+   shot (anchor JSON times are shot-local), captions chunked ≤4 words at sentence ends and
+   pauses with spoken numbers merged ("one hundred and twenty degrees" → **120°C**), pose
+   cue per sentence + keyword triggers, synthesized SFX timed to sentence/word times.
+
 ### 4a. Presenter puppet
 
 If the style has a presenter, read `references/character-craft.md`: generate visemes with

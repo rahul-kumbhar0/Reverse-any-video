@@ -1,0 +1,15 @@
+[
+ {"id":"hook1","text":"Every Indian kitchen counts the whistles.","gap":0.25},
+ {"id":"hook2","text":"But what is actually happening inside the cooker?","gap":0.35},
+ {"id":"steam","text":"As the water heats up, it turns into steam.","gap":0.2},
+ {"id":"gasket","text":"The rubber gasket seals the lid, so the steam has nowhere to go.","gap":0.3},
+ {"id":"pressure","text":"Pressure builds up, to almost double the air outside.","gap":0.25},
+ {"id":"boil","text":"And under that pressure, water boils at around one hundred and twenty degrees, not one hundred.","gap":0.25},
+ {"id":"dal","text":"That is why your dal cooks in minutes.","gap":0.35},
+ {"id":"weight","text":"On top, a heavy weight sits on a tiny steam vent.","gap":0.2},
+ {"id":"lift","text":"When the pressure gets strong enough, it lifts the weight, and the steam rushes out.","gap":0.15},
+ {"id":"whistle","text":"That is the whistle!","gap":0.35},
+ {"id":"safety","text":"And if that vent ever gets blocked, a safety valve melts open first.","gap":0.3},
+ {"id":"payoff","text":"So every whistle is your cooker letting off extra pressure.","gap":0.25},
+ {"id":"cta","text":"Send this to the person who counts them.","gap":0.6}
+]
