@@ -1,20 +1,53 @@
 ---
 name: create-video
 description: >
-  Generate a new video in a previously reverse-engineered style. Use when the user asks
-  to "make a video in <style> about <topic>" or invokes /create-video. Consumes a style
-  skill from skills/generated/<style-name>/ (SKILL.md + style-spec.json) and renders
-  with Remotion (preferred) or the bundled FFmpeg assembler.
+  Create any video: a new video in a previously reverse-engineered style, a video from
+  scratch via built-in archetypes (explainer, tutorial, ad, montage, documentary, trailer,
+  kinetic typography, …), or an edit of the user's raw footage (scene scan, best takes,
+  beat-synced cuts). Use when the user asks to "make a video", "edit my footage", or
+  invokes /create-video. Renders with Remotion (preferred) or the bundled FFmpeg assembler
+  in any aspect (9:16, 16:9, 1:1, 4:5, 21:9).
 ---
 
-# Create Video — render new content in a cloned style
+# Create Video — render any video
 
 ## Inputs
 
-1. **Style**: a folder `skills/generated/<style-name>/`. Read its `SKILL.md` fully and
-   load `style-spec.json`. If the user names no style, list the folders under
-   `skills/generated/` and ask which one.
+1. **Style — three ways to get one, in order of preference:**
+   - **Generated style**: a folder `skills/generated/<style-name>/`. Read its `SKILL.md`
+     fully and load `style-spec.json`.
+   - **Built-in archetype**: no suitable generated style? Pick one from
+     `references/video-archetypes.md` (explainer-reel, tutorial-screencast, talking-head,
+     product-ad, kinetic-typography, slideshow-montage, documentary-chapter,
+     music-beat-edit, trailer-teaser, data-story, ugc-style, whiteboard-sketch) and
+     synthesize a `style-spec.json` from its numbers. Never refuse for lack of a
+     reference video.
+   - **Reference on the spot**: the user supplied a reference video with their request?
+     Run `/reverse-video` first, then use the result.
 2. **Brief**: topic, target duration, platform, any assets (logo, footage, product shots).
+3. **Format**: resolve the aspect/resolution/fps from the brief's platform using the
+   preset table in `references/video-archetypes.md`; set `"aspect"` in timeline.json.
+   Default 9:16 for social briefs, 16:9 for long-form/tutorial briefs.
+
+## Mode B — editing real footage
+
+When the user hands you raw footage (talking-head takes, event clips, screen recordings,
+phone videos), the pipeline starts with `scripts/edit_footage.py`:
+
+```bash
+python3 scripts/edit_footage.py scan raw.mp4 clips.json --threshold 0.3 --min-dur 0.6
+python3 scripts/edit_footage.py cut raw.mp4 clips.json clips/ --ids 0,3,5
+python3 scripts/edit_footage.py beatcut raw.mp4 clips.json out.mp4 --bpm 110 --target 30 --music track.mp3
+```
+
+- **scan** → clips.json (one entry per continuous take). Extract a contact sheet of one
+  frame per clip (`ffmpeg -ss <mid> -frames:v 1`) and **look** at it to choose takes.
+- **cut** → frame-accurate MP4s to drop into the timeline as `video` shots (trim further
+  with `trim_start`, tighten with `speed`, keep the spoken audio with `keep_audio: true`).
+- **beatcut** → a finished rhythm edit on a beat grid (music-video / highlight mode).
+
+A talking-head edit = A-roll shots with `keep_audio: true` + muted b-roll shots punched
+in on top, captions from `align_words.py` against the extracted speech.
 
 ## Workflow
 
@@ -31,23 +64,36 @@ Expand the script into shots using the style's pacing numbers. Schema:
 ```jsonc
 {
   "style": "<style-name>",
-  "fps": 30, "width": 1080, "height": 1920,
+  "fps": 30, "aspect": "9:16",               // or explicit "width"/"height"
   "shots": [
     {
       "start": 0.0, "duration": 1.8,
-      "visual": { "type": "card",            // card | image | video | solid | cutout
+      "transition": { "type": "fade", "duration": 0.3 },  // INTO this shot; any ffmpeg
+                                              // xfade name: fade, dissolve, slideleft,
+                                              // circleopen, zoomin, fadeblack, wipeup…
+      "visual": { "type": "card",             // card | image | video | solid | cutout
                   "src": null,                // for image/video
                   "bg": "#0E0E10",
+                  "trim_start": 12.5,         // video: seek into source (s)
+                  "speed": 1.0,               // video: 0.5–2.0 speed ramp
+                  "fit": "cover",             // cover | contain | blur (blurred pad)
+                  "keep_audio": false,        // video: carry source audio into the mix
                   "kenburns": { "zoom": 1.06, "pan": "up" } },
       "text": { "content": "THE HOOK LINE", "role": "headline", // headline|caption|chapter
-                "highlight_words": [1] },
-      "sfx": "whoosh"                         // optional
+                "highlight_words": [1],
+                "box": false },               // true = caption plate behind text
+      // or several layers: "texts": [{...}, {...}]
+      "sfx": "whoosh"                         // auto-placed from <assets>/sfx/<name>.wav
     }
   ],
-  "voiceover": { "script": "…full VO text…", "wps": 2.9 },
-  "music": { "bpm": 110, "duck_db": -12 }
+  "voiceover": { "script": "…full VO text…", "wps": 2.9, "offset": 0 },
+  "music": { "bpm": 110, "duck_db": -12, "loop": true, "fade_out": 1.0 }
 }
 ```
+
+Transitions overlap the previous shot's tail (total = Σ durations − Σ transition
+durations) — budget shot durations accordingly. Jump-cut styles (ugc, tutorial) simply
+omit `transition`.
 
 Every timeline must pass the style's **fidelity checklist** on paper before rendering.
 
@@ -99,10 +145,15 @@ Tell the user which shots are AI footage.
 **Tier 4 — DOM/CSS in Remotion**: flat UI mockups, captions, mascots, charts. Scaffold
 from `templates/remotion/`.
 
-**Tier 5 — FFmpeg assembler (zero-dependency floor).**
+**Tier 5 — FFmpeg assembler (zero-dependency floor).** Handles cards, images
+(Ken Burns), trimmed/speed-ramped video clips with fit modes, xfade transitions,
+multi-layer text, SFX auto-placement, source-audio passthrough, looping/ducked/faded
+music — enough to ship montages, slideshows, UGC edits and talking-head cuts without
+Node at all.
 
 ```bash
-python3 scripts/assemble.py timeline.json style-spec.json out/video.mp4 --assets assets/
+python3 scripts/assemble.py timeline.json style-spec.json out/video.mp4 \
+    --assets assets/ --vo vo.wav --music bed.mp3        # SFX from assets/sfx/<name>.wav
 ```
 
 Composite: render Tier 1–3 shots to MP4 first, then place them in the Remotion timeline

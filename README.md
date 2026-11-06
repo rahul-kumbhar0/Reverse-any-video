@@ -77,6 +77,28 @@ Claude runs the full analysis pipeline, *looks at* extracted frames with its vis
 
 Claude loads the generated style skill, writes a script and shot list that obey the style's pacing/typography/palette rules, renders with Remotion (or assembles with FFmpeg), and hands you the MP4.
 
+### No reference video? Create from an archetype
+
+`/create-video` no longer requires a reverse-engineered style. Twelve built-in archetypes
+(`skills/create-video/references/video-archetypes.md`) cover the whole map — explainer
+reels, screencast tutorials, talking-head edits, product ads, kinetic typography,
+photo montages, long-form documentary chapters, beat-synced music edits, trailers,
+data stories, UGC-style posts, whiteboard explainers — each with pacing, structure, and
+audio grammar, in any aspect (9:16, 16:9, 1:1, 4:5, 21:9):
+
+```
+/create-video product-ad "30s promo for our standing desk" 1:1
+```
+
+### Edit your own footage
+
+Hand it raw footage and it edits like a cutter: `scripts/edit_footage.py` scene-scans the
+material into a clip inventory, extracts the best takes for the timeline, or auto-cuts a
+beat-synced montage to your track (`beatcut --bpm 110`). The FFmpeg assembler supports
+xfade transitions, trim/speed ramps, fit modes (cover/contain/blurred-pad), source-audio
+passthrough, and auto-placed SFX — so talking-head cuts, highlight reels, and slideshows
+work with zero Node dependencies.
+
 ### 3. Ship the style to your team
 
 A generated style skill is a self-contained folder — commit it, or publish it so anyone can `npx skills add` it. Your whole team gets the style.

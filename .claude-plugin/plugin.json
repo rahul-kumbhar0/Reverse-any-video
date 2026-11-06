@@ -1,7 +1,7 @@
 {
   "name": "reverse-any-video",
-  "version": "0.1.0",
-  "description": "Reverse-engineer any video into a reusable Claude style skill, then generate unlimited new videos in that style.",
+  "version": "0.2.0",
+  "description": "Reverse-engineer any video into a reusable Claude style skill, then create any video: cloned styles, 12 built-in archetypes, or beat-synced edits of your own footage.",
   "author": {
     "name": "Reverse Any Video contributors",
     "url": "https://github.com/rahul-kumbhar0/Reverse-any-video"
